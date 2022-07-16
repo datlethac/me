@@ -4,8 +4,8 @@ $(window).on('load', function() {
     /*======== Preloader ========*/
     $(".loader").fadeOut();
     $(".preloader").delay(100).fadeOut();
-    $("#old").text(new Date().getFullYear() - 1997);
-    $("#experience").text(new Date().getFullYear() - 2018);
+    $("#old").text(new Date().getFullYear() - 2000);
+    $("#experience").text(new Date().getFullYear() - 2022);
 
     /*======== Isotope Portfolio Setup ========*/
     if ($('.portfolio-items').length) {
