@@ -1,4 +1,3 @@
-
 const btn = document.querySelector('.talk');
 const btnNoi = document.querySelector('.noi');
 
@@ -18,11 +17,11 @@ btn.addEventListener('click', () => {
     recognition.start();
 })
 btnNoi.addEventListener('click', () => {
-    responsiveVoice.speak("Trang ăn cứt",'Vietnamese Female');
+    responsiveVoice.speak("T ăn cứt", 'Vietnamese Female');
 })
 
 
-function read(msg){
+function read(msg) {
 
     // const speech =  new SpeechSynthesisUtterance();
     // speech.lang = "vi_VN";
@@ -32,12 +31,12 @@ function read(msg){
     // speech.pitch = 1;
 
     // window.speechSynthesis.speak(speech);
-  
+
 }
 
 
 try {
-    
+
 } catch (error) {
     console.log(error);
 }
