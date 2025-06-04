@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Quiz</title>
+        <style>
+            * {
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
+                    "Open Sans", "Helvetica Neue", sans-serif;
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+                font-size: 16px;
+            }
+
+            main {
+                padding-top: 48px;
+            }
+
+            :root {
+                --large-device-width: 850px;
+                --primary-color: #0f172a;
+                --secondary-color: #020617;
+                --primary-text-color: #c7d1dd;
+                --secondary-text-color: #061602;
+                --success-background: hsl(159, 82%, 24%);
+                --success-foreground: hsl(164, 86%, 16%);
+                --success: hsl(160, 84%, 39%);
+                --danger: #ef4444;
+                --warning: #f59e0b;
+                --info-background: hsl(218, 81%, 8%);
+                --info-foreground: hsl(217, 91%, 85%);
+                --border-color: #d1d7dc;
+                --check-box-size: 20px;
+                /* control the size */
+                --check-box-color: var(--info-foreground);
+                /* the active color */
+            }
+
+            body {
+                position: relative;
+                background-color: #020617;
+                color: var(--primary-text-color);
+            }
+
+            #score-stats-container {
+                position: fixed;
+                z-index: 10;
+                top: 0;
+                height: 40px;
+                width: 100%;
+                background-color: var(--info-background);
+
+                padding: 0px 16px;
+                color: var(--info-foreground);
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            #quiz-container {
+                border-radius: 8px;
+                display: flex;
+                gap: 16px;
+                flex-direction: column;
+            }
+
+            input[type="radio"] {
+                height: var(--check-box-size);
+                aspect-ratio: 1;
+                border: calc(var(--check-box-size) / 8) solid #939393;
+                padding: calc(var(--check-box-size) / 8);
+                background: radial-gradient(farthest-side, var(--check-box-color) 94%, #0000) 50%/0 0 no-repeat
+                    content-box;
+                border-radius: 50%;
+                outline-offset: calc(var(--check-box-size) / 10);
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                appearance: none;
+                cursor: pointer;
+                font-size: inherit;
+                transition: 0.3s;
+            }
+
+            input[type="radio"]:checked {
+                border-color: var(--check-box-color);
+                background-size: 100% 100%;
+            }
+
+            input[type="radio"]:disabled {
+                background: linear-gradient(#939393 0 0) 50%/100% 20% no-repeat content-box;
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            label {
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                cursor: pointer;
+                padding: 4px 6px;
+                border-radius: 4px;
+            }
+
+            @media (max-width: 767px) {
+                input[type="radio"],
+                label {
+                    cursor: default;
+                }
+
+                #quiz-container {
+                    margin-left: 8px;
+                    margin-right: 8px;
+                }
+            }
+
+            /* PC (Desktop devices) */
+            @media (min-width: 768px) {
+                body {
+                    display: flex;
+                    justify-content: center;
+                }
+
+                main {
+                    max-width: var(--large-device-width);
+                }
+
+                #score-stats-container {
+                    max-width: var(--large-device-width);
+                }
+
+                dialog {
+                    max-width: var(--large-device-width);
+                }
+            }
+
+            @media print {
+                input[type="radio"] {
+                    background: none !important;
+                    border-color: #939393 !important;
+                }
+
+                input[type="radio"]:checked {
+                    border-color: #939393 !important;
+                }
+            }
+
+            .question-lable {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            button {
+                -webkit-tap-highlight-color: transparent;
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                user-select: none;
+                outline: none;
+                position: relative;
+                overflow: hidden;
+                cursor: pointer;
+            }
+
+            .button {
+                background-color: var(--success-background);
+                border: none;
+                color: #f4f5f7;
+                opacity: 0.8;
+                font-size: 18px;
+                flex-grow: 1;
+                padding: 8px 16px;
+                border-radius: 8px;
+            }
+
+            .button:hover {
+                opacity: 1;
+            }
+
+            .explanation-btn {
+                border: none;
+                color: var(--success);
+                background-color: transparent;
+            }
+
+            #submit-button:active::after {
+                background-color: #ef4444;
+            }
+
+            .single-question-container {
+                background-color: var(--primary-color);
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                padding: 16px;
+                border-radius: 8px;
+            }
+
+            #modal-content {
+                padding: 16px;
+                line-height: 24px;
+            }
+
+            dialog::backdrop {
+                background: rgba(0, 0, 0, 0.5);
+            }
+
+            dialog {
+                position: fixed;
+                border: 1px solid var(--border-color);
+                background-color: var(--primary-color);
+                color: rgb(240, 241, 248);
+                padding: 16px;
+                border-radius: 8px;
+                width: 80vw;
+                max-height: 80vh;
+                overflow: auto;
+                top: 50%;
+                left: 50%;
+                -webkit-transform: translateX(-50%) translateY(-50%);
+                -moz-transform: translateX(-50%) translateY(-50%);
+                -ms-transform: translateX(-50%) translateY(-50%);
+                transform: translateX(-50%) translateY(-50%);
+            }
+
+            #close-modal-btn {
+                position: absolute;
+                top: 4px;
+                right: 4px;
+                padding: 2px 8px;
+                border-radius: 2px;
+                border: none;
+                background-color: var(--danger);
+            }
+
+            .correct-answer label {
+                border: 2px solid var(--success);
+                width: 100%;
+            }
+
+            .incorrect-answer label {
+                border: 2px solid var(--danger);
+                width: 100%;
+            }
+
+            .options-container {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            #quiz-meta-container {
+                border-radius: 8px;
+                background-color: var(--primary-color);
+                margin-bottom: 12px;
+                padding: 8px;
+            }
+
+            #quiz-title {
+                text-align: center;
+                font-size: 24px;
+                margin-bottom: 8px;
+            }
+
+            #quiz-description {
+                line-height: 1.5;
+                padding: 2px 6px;
+            }
+        </style>
+    </head>
+
+    <body onload="main()">
+        <main>
+            <section id="quiz-meta-container">
+                <h1 id="quiz-title"></h1>
+                <p id="quiz-description"></p>
+            </section>
+            <section id="score-stats-container">
+                <div id="score-card">
+                    Score: <span id="current-score">999</span> of
+                    <span id="pass-percent">999%</span>
+                </div>
+                <div>Correct: <span id="correct-answers">999</span></div>
+                <div>Incorrect: <span id="wrong-answers">999</span></div>
+            </section>
+
+            <section id="quiz-container"></section>
+
+            <dialog id="modal" class="modal-container">
+                <div id="modal-content">
+                    <p id="modal-text"></p>
+                </div>
+            </dialog>
+        </main>
+
+        <script>
+            const quizData = {"quiz_id": 4540362, "quiz_description": null, "quiz_title": "Practice Test #3 (AWS Certified Developer Associate - DVA-C02)", "pass_percent": null, "questions": [{"_class": "assessment", "id": 6077706, "assessment_type": "multiple-choice", "prompt": {"answers": ["Enable Federated Identities integration with Cognito", "Put your IAM credentials onto the production instance", "IAM Roles for EC2", "Create an IAM user for your production instances, and run aws configure there"], "question": "You would like to allow a production on-premise instance to run code using the AWS SDK. You already have an internal secure way of identifying production machines within your infrastructure. What&#39;s the most secure way of achieving this?", "explanation": "Federation enables you to manage access to your AWS Cloud resources centrally. With federation, you can use single sign-on (SSO) to access your AWS accounts using credentials from your corporate directory. Read more: https://aws.amazon.com/identity/federation/"}, "correct_response": ["a"], "section": "SDK", "question_plain": "You would like to allow a production on-premise instance to run code using the AWS SDK. You already have an internal secure way of identifying production machines within your infrastructure. What&#39;s the most secure way of achieving this?", "related_lectures": []}, {"_class": "assessment", "id": 6077722, "assessment_type": "multiple-choice", "prompt": {"answers": ["ASG Worker Nodes", "ASG and ELB", "Single Instance Worker node", "Single Instance with Elastic IP"], "question": "You want to setup a highly-available application that consumes messages from SQS. Which Elastic Beanstalk fits your needs?", "explanation": "If your application performs operations or workflows that take a long time to complete, you can offload those tasks to a dedicated worker environment. Decoupling your web application front end from a process that performs blocking operations is a common way to ensure that your application stays responsive under load. Read more: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features-managing-env-tiers.html"}, "correct_response": ["a"], "section": "Elastic Beanstalk", "question_plain": "You want to setup a highly-available application that consumes messages from SQS. Which Elastic Beanstalk fits your needs?", "related_lectures": []}, {"_class": "assessment", "id": 6077720, "assessment_type": "multiple-choice", "prompt": {"answers": ["Cognito User Pools", "IAM permissions with sigv4", "Lambda Authorizer"], "question": "Your are deploying a mobile application that needs to access to API. Users will need to register and then access your API. Which authentication mechanism do you advise for your API Gateway layer?", "explanation": "A user pool is a user directory in Amazon Cognito. With a user pool, your users can sign in to your web or mobile app through Amazon Cognito. Your users can also sign in through social identity providers like Facebook or Amazon, and through SAML identity providers. Read more: https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-integrate-with-cognito.html"}, "correct_response": ["a"], "section": "Cognito", "question_plain": "Your are deploying a mobile application that needs to access to API. Users will need to register and then access your API. Which authentication mechanism do you advise for your API Gateway layer?", "related_lectures": []}, {"_class": "assessment", "id": 6077718, "assessment_type": "multiple-choice", "prompt": {"answers": ["Enable API Gateway Caching", "Use Mapping Templates", "Use Stage Variables", "Enable In Flight Encryption"], "question": "Your API Gateway is started to feel pressured by the same GET REST API calls done over and over by a variety of clients. The results of these GET API calls is always the same. What can you do to improve performance and reduce costs?", "explanation": "You can enable API caching in Amazon API Gateway to cache your endpoint&#39;s responses. With caching, you can reduce the number of calls made to your endpoint and also improve the latency of requests to your API. When you enable caching for a stage, API Gateway caches responses from your endpoint for a specified time-to-live (TTL) period, in seconds.  Read more: https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-caching.html"}, "correct_response": ["a"], "section": "API Gateway", "question_plain": "Your API Gateway is started to feel pressured by the same GET REST API calls done over and over by a variety of clients. The results of these GET API calls is always the same. What can you do to improve performance and reduce costs?", "related_lectures": []}, {"_class": "assessment", "id": 6077716, "assessment_type": "multiple-choice", "prompt": {"answers": ["Create a custom metric in CloudWatch and make your instances send data to it using PutMetricData. Create an alarm based on that metric", "Create a custom alarm for your ASG and make your instances trigger the alarm using PutAlarmData API", "Enable detailed monitoring for EC2 and ASG", "Migrate your application to AWS Lambda"], "question": "Your application needs to auto scale based on the number of requests that are successfully processed by your algorithmic engine. The logic is complex. How should you achieve this goal?", "explanation": "Amazon CloudWatch enables you to retrieve statistics as an ordered set of time-series data, known as metrics. You can use these metrics to verify that your system is performing as expected.A CloudWatch alarm is an object that monitors a single metric over a specific period. A metric is a variable that you want to monitor, such as average CPU usage of the EC2 instances, or incoming network traffic from many different EC2 instances. The alarm changes its state when the value of the metric breaches a defined range and maintains the change for a specified number of periods. Read more: https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-instance-monitoring.html#CloudWatchAlarmhttps://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/publishingMetrics.html"}, "correct_response": ["a"], "section": "CloudWatch", "question_plain": "Your application needs to auto scale based on the number of requests that are successfully processed by your algorithmic engine. The logic is complex. How should you achieve this goal?", "related_lectures": []}, {"_class": "assessment", "id": 6077714, "assessment_type": "multiple-choice", "prompt": {"answers": ["CodeCommit", "S3", "GitHub", "CodeGit"], "question": "You are looking to store all your code in a service that is private, secure, IAM managed and integrated with git command line. Which service would you choose?", "explanation": "AWS CodeCommit is a fully-managed source control service that hosts secure Git-based repositiories. It makes it easy for teams to collaborate on code in a secure and highly scalable ecosystem. Read more: https://aws.amazon.com/codecommit/"}, "correct_response": ["a"], "section": "CodeCommit", "question_plain": "You are looking to store all your code in a service that is private, secure, IAM managed and integrated with git command line. Which service would you choose?", "related_lectures": []}, {"_class": "assessment", "id": 6077712, "assessment_type": "multiple-choice", "prompt": {"answers": ["us-east-1", "us-east-2", "us-west-1", "eu-west-1"], "question": "You are using the AWS SDK but haven&#39;t specified any region. You haven&#39;t run aws configure either and are not using the environment variable AWS_REGION. You are running the commands from your computer which is connected to a network in Europe. Which region will you API calls be made in?", "explanation": "If you don&#39;t select a region, then us-east-1 will be used by default. Read more: https://docs.aws.amazon.com/sdk-for-java/v1/developer-guide/setup-credentials.html (setting the AWS region)"}, "correct_response": ["a"], "section": "CLI", "question_plain": "You are using the AWS SDK but haven&#39;t specified any region. You haven&#39;t run aws configure either and are not using the environment variable AWS_REGION. You are running the commands from your computer which is connected to a network in Europe. Which region will you API calls be made in?", "related_lectures": []}, {"_class": "assessment", "id": 6077710, "assessment_type": "multiple-choice", "prompt": {"answers": ["The user will get denied because the policy has an explicit denied", "The user will get allowed because it has an explicit allow", "This IAM user is invalid and the policy conflict must be resolved first", "The order of the policy matters. If the policy 1 is before 2, then it&#39;s denied, else if policy 2 is before 1, then it&#39;s allowed"], "question": "An IAM user has two policies attached.The first policy states that the user has explicit Denied on all EC2 actions. The second policy states that the user has Allow on EC2:Describe permission. The user tries to describe an EC2 instance using the CLI. What will happen?", "explanation": "An explicit deny in any policy overrides any allows. Read more: https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_policies_evaluation-logic.html"}, "correct_response": ["a"], "section": "IAM", "question_plain": "An IAM user has two policies attached.The first policy states that the user has explicit Denied on all EC2 actions. The second policy states that the user has Allow on EC2:Describe permission. The user tries to describe an EC2 instance using the CLI. What will happen?", "related_lectures": []}, {"_class": "assessment", "id": 6077708, "assessment_type": "multiple-choice", "prompt": {"answers": ["Deploy in a VPC and assign a Security Group", "Assign an IAM role", "Use Environment variables to pass in the RDS connection string", "Use aliases"], "question": "You have an RDS database deployed within your VPC, in a private subnet. You would like your Lambda function to connect to it. How can you achieve this?", "explanation": " Read more: https://docs.aws.amazon.com/lambda/latest/dg/vpc-rds.html"}, "correct_response": ["a"], "section": "AWS Lambda", "question_plain": "You have an RDS database deployed within your VPC, in a private subnet. You would like your Lambda function to connect to it. How can you achieve this?", "related_lectures": []}, {"_class": "assessment", "id": 6077724, "assessment_type": "multiple-choice", "prompt": {"answers": ["Enable RDS backups and use the built-in feature", "Use AWS Lambda to track the database binlog and persist it in S3.", "Enable RDS Stream, persisted in DynamoDB and use the restore feature from DynamoDB when needed", "Enable RDS Multi AZ"], "question": "You would like to perform a point in time restore for your PostgreSQL database managed by RDS. What feature you should use?", "explanation": "You can restore a DB instance to a specific point in time, creating a new DB instance. To determine the latest restorable time for a DB instance, use the AWS CLI describe-db-instances command and look at the value returned in the LatestRestorableTime field for the DB instance. In the AWS Management Console, this property is visible as the Latest restore time for the DB instance. You can restore to any point in time during your backup retention period. Read more: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PIT.html"}, "correct_response": ["a"], "section": "RDS", "question_plain": "You would like to perform a point in time restore for your PostgreSQL database managed by RDS. What feature you should use?", "related_lectures": []}, {"_class": "assessment", "id": 6077704, "assessment_type": "multiple-choice", "prompt": {"answers": ["Security Groups", "IAM Policies", "ACLs", "Bucket Policies"], "question": "Which of the following isn&#39;t a way to manage S3 security?", "explanation": "Access policies you attach to your resources (buckets and objects) are referred to as resource-based policies. For example, bucket policies and access control lists (ACLs) are resource-based policies. You can also attach access policies to users in your account. These are called user policies. You may choose to use resource-based policies, user policies, or some combination of these to manage permissions to your Amazon S3 resources. Read more: https://docs.aws.amazon.com/AmazonS3/latest/dev/s3-access-control.html"}, "correct_response": ["a"], "section": "S3", "question_plain": "Which of the following isn&#39;t a way to manage S3 security?", "related_lectures": []}, {"_class": "assessment", "id": 6077702, "assessment_type": "multiple-choice", "prompt": {"answers": ["Enable X-Ray sampling", "Filter the amount of data sent client side", "Custom configuration for the X-Ray agents", "Implement a network security rule"], "question": "Your entire stack is integrated with AWS X-Ray but now you have too much data going into X-Ray and your costs are skyrocketting. Which feature can help you reduce costs?", "explanation": "To ensure efficient tracing and provide a representative sample of the requests that your application serves, the X-Ray SDK applies a sampling algorithm to determine which requests get traced. By default, the X-Ray SDK records the first request each second, and five percent of any additional requests. Read more: https://docs.aws.amazon.com/xray/latest/devguide/xray-concepts.html#xray-concepts-sampling"}, "correct_response": ["a"], "section": "X-Ray", "question_plain": "Your entire stack is integrated with AWS X-Ray but now you have too much data going into X-Ray and your costs are skyrocketting. Which feature can help you reduce costs?", "related_lectures": []}, {"_class": "assessment", "id": 6077700, "assessment_type": "multiple-choice", "prompt": {"answers": ["The Load Balancer does not have stickiness enabled", "The application must have a bug", "The EC2 instances log out users because they don&#39;t see their true Ips"], "question": "You are running a website with a load balancer and 10 EC2 instances. Your users are complaining about the fact that your website always asks them to re-authenticate when they switch pages. You are puzzled, because it&#39;s working just fine on your machine and in the dev environment with 1 server. What could be the reason?", "explanation": "By default, a Classic Load Balancer routes each request independently to the registered instance with the smallest load. However, you can use the sticky session feature (also known as session affinity), which enables the load balancer to bind a user&#39;s session to a specific instance. This ensures that all requests from the user during the session are sent to the same instance. Read more: https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/elb-sticky-sessions.html"}, "correct_response": ["a"], "section": "ELB", "question_plain": "You are running a website with a load balancer and 10 EC2 instances. Your users are complaining about the fact that your website always asks them to re-authenticate when they switch pages. You are puzzled, because it&#39;s working just fine on your machine and in the dev environment with 1 server. What could be the reason?", "related_lectures": []}, {"_class": "assessment", "id": 6077698, "assessment_type": "multiple-choice", "prompt": {"answers": ["Use the SQS Extended Client", "Get a service limit increase from AWS", "Use gzip compression", "Use the MultiPart API"], "question": "You would like to send messages of over 1MB to SQS but you know the limit is 256KB for messages. What should you do?", "explanation": "To send messages larger than 256 KB, you can use the Amazon SQS Extended Client Library for Java. This library allows you to send an Amazon SQS message that contains a reference to a message payload in Amazon S3. The maximum payload size is 2 GB. Read more: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-limits.html"}, "correct_response": ["a"], "section": "SQS", "question_plain": "You would like to send messages of over 1MB to SQS but you know the limit is 256KB for messages. What should you do?", "related_lectures": []}, {"_class": "assessment", "id": 6077696, "assessment_type": "multiple-choice", "prompt": {"answers": ["CloudTrail", "KMS Key Logs", "IAM", "VPC Flow Logs"], "question": "You would like to audit which employees and applications are using your KMS key. Where should you look?", "explanation": "With CloudTrail, you can log, continuously monitor, and retain account activity related to actions across your AWS infrastructure. CloudTrail provides event history of your AWS account activity, including actions taken through the AWS Management Console, AWS SDKs, command line tools, and other AWS services. This event history simplifies security analysis, resource change tracking, and troubleshooting. Read more: https://aws.amazon.com/cloudtrail/"}, "correct_response": ["a"], "section": "CloudTrail", "question_plain": "You would like to audit which employees and applications are using your KMS key. Where should you look?", "related_lectures": []}, {"_class": "assessment", "id": 6077694, "assessment_type": "multiple-choice", "prompt": {"answers": ["Add an ElastiCache Cluster", "Enable RDS read replicas", "Enable Load Balancer stickiness", "Use Elastic IP"], "question": "Your users are complaining that they have to re-login into your website very often. You have deployed a traditional architecture of a 3-tier web application with a load balancer, an auto scaling group and an RDS database. The session information is stored in-memory for each application. What can you do without changing the code to improve the situation?", "explanation": "In order to address scalability and to provide a shared data storage for sessions that can be accessible from any individual web server, you can abstract the HTTP sessions from the web servers themselves. A common solution to for this is to leverage an ElastiCache service offerings which is an In-Memory Key/Value store such as Redis and Memcached. Read more: https://aws.amazon.com/caching/session-management/"}, "correct_response": ["a"], "section": "ElastiCache", "question_plain": "Your users are complaining that they have to re-login into your website very often. You have deployed a traditional architecture of a 3-tier web application with a load balancer, an auto scaling group and an RDS database. The session information is stored in-memory for each application. What can you do without changing the code to improve the situation?", "related_lectures": []}, {"_class": "assessment", "id": 6077692, "assessment_type": "multi-select", "prompt": {"answers": ["Elastic Beanstalk", "Step Function", "Autoscaling", "CodeBuild", "Lambda"], "question": "Which of the following AWS services rely on Cloudformation to provision resources? (select two)", "explanation": "You can use the Resources key in a configuration file to create and customize AWS resources in your environment. Resources defined in configuration files are added to the AWS CloudFormation template used to launch your environment. All AWS CloudFormation resources types are supported.You can now use CloudFormation templates to create and delete Step Functions state machines and Activities. Read more: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/environment-resources.htmlhttps://aws.amazon.com/about-aws/whats-new/2017/02/aws-cloudformation-adds-support-for-aws-step-functions/"}, "correct_response": ["a", "b"], "section": "CloudFormation", "question_plain": "Which of the following AWS services rely on Cloudformation to provision resources? (select two)", "related_lectures": []}, {"_class": "assessment", "id": 6077690, "assessment_type": "multiple-choice", "prompt": {"answers": ["TCP", "HTTP", "HTTPS", "Websocket"], "question": "Application Load Balancers handle all these protocols except", "explanation": "The Application Load Balancer supports following protocols: WebSocket and HTTP/2. Read more: https://aws.amazon.com/blogs/aws/new-aws-application-load-balancer/"}, "correct_response": ["a"], "section": "ELB", "question_plain": "Application Load Balancers handle all these protocols except", "related_lectures": []}, {"_class": "assessment", "id": 6077726, "assessment_type": "multiple-choice", "prompt": {"answers": ["CloudWatch Event Rules", "SNS", "SQS", "SES"], "question": "You would like to intercept state changes for CodePipeline (such as when a pipeline fails), which integration must you use?", "explanation": "Amazon CloudWatch Events is a web service that monitors your AWS resources and the applications you run on AWS. You can use Amazon CloudWatch Events to detect and react to changes in the state of a pipeline, stage, or action. Then, based on rules you create, CloudWatch Events invokes one or more target actions when a pipeline, stage, or action enters the state you specify in a rule.  Read more: https://docs.aws.amazon.com/codepipeline/latest/userguide/detect-state-changes-cloudwatch-events.html"}, "correct_response": ["a"], "section": "CodePipeline", "question_plain": "You would like to intercept state changes for CodePipeline (such as when a pipeline fails), which integration must you use?", "related_lectures": []}, {"_class": "assessment", "id": 6077728, "assessment_type": "multiple-choice", "prompt": {"answers": ["Redshift", "RDS", "DynamoDB", "ElastiCache"], "question": "You are looking to perform some analytics in your database. You should use", "explanation": "Amazon Redshift is a fully managed, petabyte-scale data warehouse service in the cloud. You can start with just a few hundred gigabytes of data and scale to a petabyte or more. This enables you to use your data to acquire new insights for your business and customers. Read more: https://docs.aws.amazon.com/redshift/latest/mgmt/welcome.html"}, "correct_response": ["a"], "section": "Redshift", "question_plain": "You are looking to perform some analytics in your database. You should use", "related_lectures": []}, {"_class": "assessment", "id": 6077730, "assessment_type": "multiple-choice", "prompt": {"answers": ["Setup ElastiCache in front of RDS", "Setup RDS Read Replicas", "Use Redshift", "Switch your application code to AWS Lambda"], "question": "An RDS database is experiencing read heavy workload (99% of read versus 1% of writes) and the number of rows you have is quite small. You would like to scale the read performance to possibly high numbers as your website scales, but don&#39;t want to have to experience linear cost as the read load increases. You don&#39;t mind changing the application code logic. Which solution fits best this use case?", "explanation": " Read more: https://aws.amazon.com/blogs/database/automating-sql-caching-for-amazon-elasticache-and-amazon-rds/"}, "correct_response": ["a"], "section": "ElastiCache", "question_plain": "An RDS database is experiencing read heavy workload (99% of read versus 1% of writes) and the number of rows you have is quite small. You would like to scale the read performance to possibly high numbers as your website scales, but don&#39;t want to have to experience linear cost as the read load increases. You don&#39;t mind changing the application code logic. Which solution fits best this use case?", "related_lectures": []}, {"_class": "assessment", "id": 6077732, "assessment_type": "multiple-choice", "prompt": {"answers": ["CodeDeploy Agent", "AWS CloudWatch Log Agent", "Mount EBS volumes on the EC2 instances", "Have a load balancer in front of your instances"], "question": "What&#39;s absolutely necessary to run on your EC2 instances or on-premise servers in order for CodeDeploy to work?", "explanation": "The AWS CodeDeploy agent is a software package that, when installed and configured on an instance, enables that instance to be used in AWS CodeDeploy deployments. Read more: https://docs.aws.amazon.com/codedeploy/latest/userguide/codedeploy-agent-operations-install.html"}, "correct_response": ["a"], "section": "CodeDeploy", "question_plain": "What&#39;s absolutely necessary to run on your EC2 instances or on-premise servers in order for CodeDeploy to work?", "related_lectures": []}, {"_class": "assessment", "id": 6077734, "assessment_type": "multiple-choice", "prompt": {"answers": ["CloudWatch Event Rules", "SNS + SES", "AWS Lambda", "SQS"], "question": "You want to send email notifications any time someone comments on a pul request in CodeCommit. How can you achieve that with no custom code?", "explanation": "You can set up notifications for a repository so that repository users receive emails about the repository event types you specify. When you configure notifications, AWS CodeCommit creates an Amazon CloudWatch Events rule for your repository. This rule responds to the event types you select from the preconfigured options in the AWS CodeCommit console. Read more: https://docs.aws.amazon.com/codecommit/latest/userguide/how-to-repository-email.html"}, "correct_response": ["a"], "section": "CodeCommit", "question_plain": "You want to send email notifications any time someone comments on a pul request in CodeCommit. How can you achieve that with no custom code?", "related_lectures": []}, {"_class": "assessment", "id": 6077736, "assessment_type": "multiple-choice", "prompt": {"answers": ["Increase the minimum instances in the ASG to 2", "Change the target auto scaling policy for network bytes", "Configure ASG fast failover", "Enable RDS Multi AZ"], "question": "You have an auto scaling group with a minimum capacity of 1 and a maximum capacity of 5, configured to launch instances across 3 AZ. It is configured to scale based on a target CPU Utilisation of 35%. During a low utilisation period of your application, an entire AWS availability zone went down and your application experienced downtime. What should you do to ensure that your application is highly available?", "explanation": " Read more: https://docs.aws.amazon.com/autoscaling/ec2/userguide/as-maintain-instance-levels.html"}, "correct_response": ["a"], "section": "ASG", "question_plain": "You have an auto scaling group with a minimum capacity of 1 and a maximum capacity of 5, configured to launch instances across 3 AZ. It is configured to scale based on a target CPU Utilisation of 35%. During a low utilisation period of your application, an entire AWS availability zone went down and your application experienced downtime. What should you do to ensure that your application is highly available?", "related_lectures": []}, {"_class": "assessment", "id": 6077738, "assessment_type": "multiple-choice", "prompt": {"answers": ["4KB", "32KB", "1MB", "1KB"], "question": "What is the maximum size of AWS Lambda environment variables?", "explanation": "There is no limit to the number of environment variables you can create as long as the total size of the set does not exceed 4 KB. Read more: https://docs.aws.amazon.com/lambda/latest/dg/env_variables.html"}, "correct_response": ["a"], "section": "AWS Lambda", "question_plain": "What is the maximum size of AWS Lambda environment variables?", "related_lectures": []}, {"_class": "assessment", "id": 6077740, "assessment_type": "multiple-choice", "prompt": {"answers": ["SNS + HTTP Integration", "AWS Lambda", "AWS SES", "CloudWatch Event Rules"], "question": "You would like to trigger an external HTTP service (also called webhook) when someone pushes code to AWS CodeCommit. How can you implement that with no code changes?", "explanation": "You can create a trigger for an AWS CodeCommit repository so that events in that repository trigger notifications from an Amazon Simple Notification Service (Amazon SNS) topic. You might want to create a trigger to an Amazon SNS topic to enable users to subscribe to notifications about repository events, such as the deletion of branches. Read more: https://docs.aws.amazon.com/codecommit/latest/userguide/how-to-notify-sns.html"}, "correct_response": ["a"], "section": "CodeCommit", "question_plain": "You would like to trigger an external HTTP service (also called webhook) when someone pushes code to AWS CodeCommit. How can you implement that with no code changes?", "related_lectures": []}, {"_class": "assessment", "id": 6077742, "assessment_type": "multiple-choice", "prompt": {"answers": ["CloudTrail", "VPC Flow Logs", "IAM", "CloudWatch Logs"], "question": "You would like to audit all the denied API calls that have been made in your AWS infrastructure to ensure one of your employees isn&#39;t trying to go beyond his rights. Which technology allows you to do this?", "explanation": "With CloudTrail, you can log, continuously monitor, and retain account activity related to actions across your AWS infrastructure. CloudTrail provides event history of your AWS account activity, including actions taken through the AWS Management Console, AWS SDKs, command line tools, and other AWS services. This event history simplifies security analysis, resource change tracking, and troubleshooting. Read more: https://aws.amazon.com/cloudtrail/"}, "correct_response": ["a"], "section": "CloudTrail", "question_plain": "You would like to audit all the denied API calls that have been made in your AWS infrastructure to ensure one of your employees isn&#39;t trying to go beyond his rights. Which technology allows you to do this?", "related_lectures": []}, {"_class": "assessment", "id": 6077744, "assessment_type": "multiple-choice", "prompt": {"answers": ["1 second", "5 seconds", "10 seconds", "30 seconds"], "question": "What is the maximum resolution you can obtain to use custom metrics in CloudWatch?", "explanation": "Using the existing PutMetricData API, you can now publish Custom Metrics down to 1-second resolution. This gives you more immediate visibility and greater granularity into the state and performance of your custom applications, such as observing short-lived spikes and functions. Read more: https://aws.amazon.com/about-aws/whats-new/2017/07/amazon-cloudwatch-introduces-high-resolution-custom-metrics-and-alarms/"}, "correct_response": ["a"], "section": "CloudWatch", "question_plain": "What is the maximum resolution you can obtain to use custom metrics in CloudWatch?", "related_lectures": []}, {"_class": "assessment", "id": 6077746, "assessment_type": "multiple-choice", "prompt": {"answers": ["Create a cron event in CloudWatch, which triggers an AWS Lambda function that triggers the snapshotting feature", "Enable RDS periodic backups", "Enable RDS Read replicas", "Enable RDS Multi AZ"], "question": "Your company has a requirement to keep a monthly database backup for three years, for compliance and audit purposes. How can you implement that feature?", "explanation": "You need to provide the automation layer as it doesn&#39;t exist. This is a very common use case of Lambda. Read more: https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_CreateSnapshot.htmlhttps://docs.aws.amazon.com/lambda/latest/dg/with-scheduled-events.html"}, "correct_response": ["a"], "section": "RDS", "question_plain": "Your company has a requirement to keep a monthly database backup for three years, for compliance and audit purposes. How can you implement that feature?", "related_lectures": []}, {"_class": "assessment", "id": 6077748, "assessment_type": "multiple-choice", "prompt": {"answers": ["You need to upload a smaller function and load extra files at runtime into the /tmp directory", "You need to place a service limit increase", "You need to zip your function with higher compression ratio", "The limit of unzipped functions is 512MB so you don&#39;t need to do any changes"], "question": "You would like to deploy a Lambda function which unzipped amounts to 300 MB of data. How can you do that?", "explanation": " Read more: https://docs.aws.amazon.com/lambda/latest/dg/limits.html"}, "correct_response": ["a"], "section": "AWS Lambda", "question_plain": "You would like to deploy a Lambda function which unzipped amounts to 300 MB of data. How can you do that?", "related_lectures": []}, {"_class": "assessment", "id": 6077750, "assessment_type": "multiple-choice", "prompt": {"answers": ["1 minute", "2 minutes", "30 seconds", "5 minutes"], "question": "At which frequency do EC2 instances report their metrics under detailed monitoring configuration?", "explanation": "Data is available in 1-minute periods for an additional cost. To get this level of data, you must specifically enable it for the instance. For the instances where you&#39;ve enabled detailed monitoring, you can also get aggregated data across groups of similar instances. Read more: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-cloudwatch-new.html"}, "correct_response": ["a"], "section": "CloudWatch", "question_plain": "At which frequency do EC2 instances report their metrics under detailed monitoring configuration?", "related_lectures": []}, {"_class": "assessment", "id": 6077752, "assessment_type": "multiple-choice", "prompt": {"answers": ["You have a hot partition", "Your IAM policy is wrong", "WCU are applied across to all your DynamoDB tables, not just one table", "CloudWatch monitoring is lagging"], "question": "You have 20 partitions in your DynamoDB table and 200 WCU. You observe a usage of WCU of 30 WCU, and you are getting ProvisionedThroughputExceptions. What is the likely cause of this?", "explanation": "It&#39;s not always possible to distribute read and write activity evenly all the time. When data access is imbalanced, a &quot;hot&quot; partition can receive such a higher volume of read and write traffic compared to other partitions. Read more: https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/bp-partition-key-design.html"}, "correct_response": ["a"], "section": "DynamoDB", "question_plain": "You have 20 partitions in your DynamoDB table and 200 WCU. You observe a usage of WCU of 30 WCU, and you are getting ProvisionedThroughputExceptions. What is the likely cause of this?", "related_lectures": []}, {"_class": "assessment", "id": 6077754, "assessment_type": "multiple-choice", "prompt": {"answers": ["Restrict CORS", "Use Mapping Templates", "Assign a Security Groups to your API Gateway", "Enable Caching"], "question": "Your API Gateway is receiving requests from an authorized external domain name you don&#39;t control. As a result, your costs are sky-rocketting. What should you do to prevent illegitimate requests?", "explanation": "When your API&#39;s resources receive requests from a domain other than the API&#39;s own domain and you want to restrict servicing these requests, you must disable cross-origin resource sharing (CORS) for selected methods on the resource.  Read more: https://docs.aws.amazon.com/apigateway/latest/developerguide/how-to-cors.html"}, "correct_response": ["a"], "section": "API Gateway", "question_plain": "Your API Gateway is receiving requests from an authorized external domain name you don&#39;t control. As a result, your costs are sky-rocketting. What should you do to prevent illegitimate requests?", "related_lectures": []}, {"_class": "assessment", "id": 6077658, "assessment_type": "multi-select", "prompt": {"answers": ["Updating an existing object", "Deleting an existing object", "Creating a new object"], "question": "Which of the following operations do have eventual consistency in S3? (select two)", "explanation": "Amazon S3 offers eventual consistency for overwrite PUTS and DELETES in all regions. Read more: https://docs.aws.amazon.com/AmazonS3/latest/dev/Introduction.html"}, "correct_response": ["a", "b"], "section": "S3", "question_plain": "Which of the following operations do have eventual consistency in S3? (select two)", "related_lectures": []}, {"_class": "assessment", "id": 6077628, "assessment_type": "multiple-choice", "prompt": {"answers": ["Expose a domain name created with Route53", "Use the domain name provided by your ELB", "Use the domain name provided by your API gateway", "Use the domain name provided by CloudFront"], "question": "You would like your users to be able to access your application using a stable URL. The architecture of your application may evolve but the users should not be aware of it. How can you do that?", "explanation": "Route53 allows you to change the record type of your domain and lets you be completely free for what architecture you want to implement or change in the future Read more: https://aws.amazon.com/route53/"}, "correct_response": ["a"], "section": "Route53", "question_plain": "You would like your users to be able to access your application using a stable URL. The architecture of your application may evolve but the users should not be aware of it. How can you do that?", "related_lectures": []}, {"_class": "assessment", "id": 6077630, "assessment_type": "multiple-choice", "prompt": {"answers": ["Move the S3 client initialisation out of your function handler", "Assign more RAM to the function", "Change the IAM role"], "question": "Your lambda function acts as a proxy for applications to upload data to S3. You notice that each time your function is called, a new S3 client is created and that heavily impacts your function performance. What should you do to improve the performance?", "explanation": "Limit the re-initialization of variables/objects on every invocation. Instead use static initialization/constructor, global/static variables and singletons. Keep alive and reuse connections (HTTP, database, etc.) that were established during a previous invocation. Read more: https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html"}, "correct_response": ["a"], "section": "AWS Lambda", "question_plain": "Your lambda function acts as a proxy for applications to upload data to S3. You notice that each time your function is called, a new S3 client is created and that heavily impacts your function performance. What should you do to improve the performance?", "related_lectures": []}, {"_class": "assessment", "id": 6077632, "assessment_type": "multiple-choice", "prompt": {"answers": ["We should look at the header X-Forwarded-For", "We should change the client application to send their IP as part of the payloads", "The IP incoming to our EC2 server is the one of the clients, therefore we do not have to do anything", "Change the security groups rules"], "question": "Your application is running behind an application load balancer and you would like to be able to track client IP. How do you get that information in your application?", "explanation": "The X-Forwarded-For request header helps you identify the IP address of a client when you use an HTTP or HTTPS load balancer. Because load balancers intercept traffic between clients and servers, your server access logs contain only the IP address of the load balancer. To see the IP address of the client, use the X-Forwarded-For request header. Read more: https://docs.aws.amazon.com/elasticloadbalancing/latest/classic/x-forwarded-headers.html"}, "correct_response": ["a"], "section": "ELB", "question_plain": "Your application is running behind an application load balancer and you would like to be able to track client IP. How do you get that information in your application?", "related_lectures": []}, {"_class": "assessment", "id": 6077634, "assessment_type": "multiple-choice", "prompt": {"answers": ["Create one CodePipeline for your entire flow, and add a manual approval step", "Create multiple CodePipelines for each environment and link them using AWS Lambda", "Create deeply integrated AWS CodePipelines for each environment", "Use CodeDeploy"], "question": "You would like to allow a production on-premise instance to run code using the AWS SDK. You already have an internal secure way of identifying production machines within your infrastructure. What&#39;s the most secure way of achieving this?", "explanation": "It is fine to chain up the environments and have complicated CodePipeline. A manual step before deploying to production is also very common Read more:  https://docs.aws.amazon.com/codepipeline/latest/userguide/approvals-action-add.html"}, "correct_response": ["a"], "section": "CodePipeline", "question_plain": "You would like to allow a production on-premise instance to run code using the AWS SDK. You already have an internal secure way of identifying production machines within your infrastructure. What&#39;s the most secure way of achieving this?", "related_lectures": []}, {"_class": "assessment", "id": 6077636, "assessment_type": "multiple-choice", "prompt": {"answers": ["CloudFront", "ElastiCache", "S3 Caching", "EFS"], "question": "You are looking to provide better latency for retrieving files from S3 for your users around the globe. Which technology can help you?", "explanation": "Amazon CloudFront is a fast content delivery network (CDN) service that securely delivers data, videos, applications, and APIs to customers globally with low latency, high transfer speeds, all within a developer-friendly environment. Read more: https://aws.amazon.com/cloudfront/"}, "correct_response": ["a"], "section": "CloudFront", "question_plain": "You are looking to provide better latency for retrieving files from S3 for your users around the globe. Which technology can help you?", "related_lectures": []}, {"_class": "assessment", "id": 6077638, "assessment_type": "multiple-choice", "prompt": {"answers": ["AWS Lambda", "SNS", "SES", "Cron Jobs", "Kinesis"], "question": "Your manager has a requirement that anyone who pushes code in CodeCommit must have signed an CLA first. These requirements must be checked in real-time. He has provided you with the code to check whether a committer has signed a CLA. How can you implement this solution easily?", "explanation": "Lambda can be used to retrieve commits, analyse code and committers and perform creative tasks such as checking a CLA. Read more:  https://docs.aws.amazon.com/codecommit/latest/userguide/how-to-notify-lambda.html"}, "correct_response": ["a"], "section": "CodeCommit", "question_plain": "Your manager has a requirement that anyone who pushes code in CodeCommit must have signed an CLA first. These requirements must be checked in real-time. He has provided you with the code to check whether a committer has signed a CLA. How can you implement this solution easily?", "related_lectures": []}, {"_class": "assessment", "id": 6077640, "assessment_type": "multiple-choice", "prompt": {"answers": ["Query the meta data at http://169.254.169.254/latest/meta-data", "Query the user data at http://169.254.169.254/latest/user-data", "Create an IAM role and attach it to my EC2 instance so I can perform a &quot;describe&quot; API call", "Query the user data at http://254.169.254.169/latest/meta-data"], "question": "To get the instance id of my EC2 machine from the EC2 machine, the best thing is to  ", "explanation": "Because your instance metadata is available from your running instance, you do not need to use the Amazon EC2 console or the AWS CLI. This can be helpful when you&#39;re writing scripts to run from your instance.To view all categories of instance metadata from within a running instance, use the following URI:http://169.254.169.254/latest/meta-data/ Read more: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html"}, "correct_response": ["a"], "section": "EC2", "question_plain": "To get the instance id of my EC2 machine from the EC2 machine, the best thing is to", "related_lectures": []}, {"_class": "assessment", "id": 6077642, "assessment_type": "multiple-choice", "prompt": {"answers": ["SES", "SNS", "SQS", "Kinesis"], "question": "You need a service to send and receive emails, controlled by IAM. What do you suggest?", "explanation": "Amazon Simple Email Service (Amazon SES) is a cloud-based email sending service designed to help digital marketers and application developers send marketing, notification, and transactional emails. Read more: https://aws.amazon.com/ses/"}, "correct_response": ["a"], "section": "SES", "question_plain": "You need a service to send and receive emails, controlled by IAM. What do you suggest?", "related_lectures": []}, {"_class": "assessment", "id": 6077644, "assessment_type": "multiple-choice", "prompt": {"answers": ["PurgeQueue", "DeleteQueue then CreateQueue", "BatchDelete", "ChangeVisibilityTimeout"], "question": "Which API should you call to delete all the messages an SQS queue efficiently while guaranteing uptime?", "explanation": "PurgeQueue deletes the messages in a queue specified by the QueueURL parameter. Read more: https://docs.aws.amazon.com/cli/latest/reference/sqs/purge-queue.html"}, "correct_response": ["a"], "section": "SQS", "question_plain": "Which API should you call to delete all the messages an SQS queue efficiently while guaranteing uptime?", "related_lectures": []}, {"_class": "assessment", "id": 6077646, "assessment_type": "multiple-choice", "prompt": {"answers": ["Do nothing, SQS scales automatically", "Increase the capacity of the SQS queue", "Enable auto scaling in the SQS queue", "Open a support ticket to pre-warm the SQS queue"], "question": "You are preparing for the biggest day of sale of the year, where your traffic will increase by 100x. You have already setup SQS standard queue. What should you do?", "explanation": "Amazon SQS leverages the AWS cloud to dynamically scale based on demand. SQS scales elastically with your application so you don&#39;t have to worry about capacity planning and pre-provisioning. There is no limit to the number of messages per queue, and standard queues provide nearly unlimited throughput. Read more: https://aws.amazon.com/sqs/"}, "correct_response": ["a"], "section": "SQS", "question_plain": "You are preparing for the biggest day of sale of the year, where your traffic will increase by 100x. You have already setup SQS standard queue. What should you do?", "related_lectures": []}, {"_class": "assessment", "id": 6077648, "assessment_type": "multi-select", "prompt": {"answers": ["10 seconds", "30 seconds", "1 second", "1 minute"], "question": "What are the only resolutions you can choose for CloudWatch Alarms for High Resolution custom metrics? (select two)", "explanation": "If you set an alarm on a high-resolution metric, you can specify a high-resolution alarm with a period of 10 seconds or 30 seconds, or you can set a regular alarm with a period of any multiple of 60 seconds. Read more: https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html#high-resolution-alarms"}, "correct_response": ["a", "b"], "section": "CloudWatch", "question_plain": "What are the only resolutions you can choose for CloudWatch Alarms for High Resolution custom metrics? (select two)", "related_lectures": []}, {"_class": "assessment", "id": 6077650, "assessment_type": "multiple-choice", "prompt": {"answers": ["Fix the IAM Role", "Use synchronous invocations instead", "Use aliases instead", "You need to disable encryption"], "question": "You have enabled a SQS DLQ for your AWS Lambda function, but it seems that even after a failed retried asynchronous invocation, the message does not appear in SQS. What&#39;s the reason?", "explanation": " Read more: https://docs.aws.amazon.com/lambda/latest/dg/dlq.html"}, "correct_response": ["a"], "section": "AWS Lambda", "question_plain": "You have enabled a SQS DLQ for your AWS Lambda function, but it seems that even after a failed retried asynchronous invocation, the message does not appear in SQS. What&#39;s the reason?", "related_lectures": []}, {"_class": "assessment", "id": 6077652, "assessment_type": "multiple-choice", "prompt": {"answers": ["Use Exponential Backoff for retries", "Use Kinesis Stream", "Check IAM policy", "Enable high throughput metrics in CloudWatch"], "question": "You are getting Throttle errors when you push data to CloudWatch using the PutMetric API. What should you do?", "explanation": "each AWS SDK implements exponential backoff algorithm for better flow control. The idea behind exponential backoff is to use progressively longer waits between retries for consecutive error responses. You should implement a maximum delay interval, as well as a maximum number of retries. The maximum delay interval and maximum number of retries are not necessarily fixed values, and should be set based on the operation being performed, as well as other local factors, such as network latency. Read more: https://docs.aws.amazon.com/general/latest/gr/api-retries.html"}, "correct_response": ["a"], "section": "CloudWatch", "question_plain": "You are getting Throttle errors when you push data to CloudWatch using the PutMetric API. What should you do?", "related_lectures": []}, {"_class": "assessment", "id": 6077654, "assessment_type": "multiple-choice", "prompt": {"answers": ["Use AWS Lambda aliases", "Use environment variables", "Use Route53", "Deploy your Lambda in a VPC"], "question": "How can you do traffic shifting deploymens and tests between two versions for your AWS Lambda?", "explanation": "By default, an alias points to a single Lambda function version. When the alias is updated to point to a different function version, incoming request traffic in turn instantly points to the updated version. This exposes that alias to any potential instabilities introduced by the new version. To minimize this impact, you can implement the routing-config parameter of the Lambda alias that allows you to point to two different versions of the Lambda function and dictate what percentage of incoming traffic is sent to each version. Read more: https://docs.aws.amazon.com/lambda/latest/dg/lambda-traffic-shifting-using-aliases.html"}, "correct_response": ["a"], "section": "AWS Lambda", "question_plain": "How can you do traffic shifting deploymens and tests between two versions for your AWS Lambda?", "related_lectures": []}, {"_class": "assessment", "id": 6077656, "assessment_type": "multiple-choice", "prompt": {"answers": ["STS", "KMS", "SSM", "SES"], "question": "You need to obtain temporary credentials from a role you have access to. Which service do you need to use?", "explanation": "You can use the AWS Security Token Service (AWS STS) to create and provide trusted users with temporary security credentials that can control access to your AWS resources Read more: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp.html"}, "correct_response": ["a"], "section": "STS", "question_plain": "You need to obtain temporary credentials from a role you have access to. Which service do you need to use?", "related_lectures": []}, {"_class": "assessment", "id": 6077626, "assessment_type": "multiple-choice", "prompt": {"answers": ["Enable SQS KMS encryption", "Use the SSL endpoint", "Use Client side encryption", "Change the IAM policy"], "question": "Your company plans on using SQS but has strong security requirements that force every message to be encrypted at rest. Which option can help you achieve that without changing code?", "explanation": "You can now choose to have SQS encrypt messages stored in both Standard and FIFO queues using an encryption key provided by AWS Key Management Service (KMS). Read more: https://aws.amazon.com/blogs/aws/new-server-side-encryption-for-amazon-simple-queue-service-sqs/"}, "correct_response": ["a"], "section": "SQS", "question_plain": "Your company plans on using SQS but has strong security requirements that force every message to be encrypted at rest. Which option can help you achieve that without changing code?", "related_lectures": []}, {"_class": "assessment", "id": 6077660, "assessment_type": "multiple-choice", "prompt": {"answers": ["Change the setting for message retention", "The maximum retention of messages is 7 days, therefore you can&#39;t have 12 days retention", "Enable Long Polling", "Use a FIFO queue"], "question": "Your manager would like messages to be stored in SQS for 12 days. What can you do to achieve that?", "explanation": "Amazon SQS automatically deletes messages that have been in a queue for more than maximum message retention period. The default message retention period is 4 days. However, you can set the message retention period to a value from 60 seconds to 1,209,600 seconds (14 days) using the SetQueueAttributes action. Read more: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-basic-architecture.html"}, "correct_response": ["a"], "section": "SQS", "question_plain": "Your manager would like messages to be stored in SQS for 12 days. What can you do to achieve that?", "related_lectures": []}, {"_class": "assessment", "id": 6077662, "assessment_type": "multiple-choice", "prompt": {"answers": ["Environment variables", "IAM Roles", "Timeouts", "Aliases"], "question": "You want to have parameters to control your Lambda function connection string to your RDS database. Which feature helps you achieve this?", "explanation": "Environment variables for Lambda functions enable you to dynamically pass settings to your function code and libraries, without making changes to your code. Environment variables are key-value pairs that you create and modify as part of your function configuration, using either the AWS Lambda Console, the AWS Lambda CLI or the AWS Lambda SDK. Read more: https://docs.aws.amazon.com/lambda/latest/dg/env_variables.html"}, "correct_response": ["a"], "section": "AWS Lambda", "question_plain": "You want to have parameters to control your Lambda function connection string to your RDS database. Which feature helps you achieve this?", "related_lectures": []}, {"_class": "assessment", "id": 6077664, "assessment_type": "multiple-choice", "prompt": {"answers": ["Use AWS Lambda aliases", "Disable AWS Lambda versioning", "Use environment variables", "Enable X-Ray integration"], "question": "When you upload a code update to your AWS Lambda function, it creates a new version. How do you handle versioning to ensure your production environment isn&#39;t impacted by code updates done by your developers?", "explanation": "AWS Lambda also supports creating aliases for each of your Lambda function versions. Conceptually, an AWS Lambda alias is a pointer to a specific Lambda function version. It&#39;s also a resource similar to a Lambda function, and each alias has a unique ARN. Each alias maintains an ARN for the function version to which it points. Read more: https://docs.aws.amazon.com/lambda/latest/dg/versioning-aliases.html"}, "correct_response": ["a"], "section": "AWS Lambda", "question_plain": "When you upload a code update to your AWS Lambda function, it creates a new version. How do you handle versioning to ensure your production environment isn&#39;t impacted by code updates done by your developers?", "related_lectures": []}, {"_class": "assessment", "id": 6077666, "assessment_type": "multiple-choice", "prompt": {"answers": ["Use SQS FIFO", "Use SQS DLQ", "Use SQS Standard", "Use Kinesis"], "question": "You have total ordering requirements for your messages in SQS. Which queue should you use?", "explanation": "FIFO (First-In-First-Out) queues are designed to enhance messaging between applications when the order of operations and events is critical, or where duplicates can&#39;t be tolerated Read more: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/FIFO-queues.html"}, "correct_response": ["a"], "section": "SQS", "question_plain": "You have total ordering requirements for your messages in SQS. Which queue should you use?", "related_lectures": []}, {"_class": "assessment", "id": 6077668, "assessment_type": "multiple-choice", "prompt": {"answers": ["CodeBuild scales automatically", "Increase the instance types for your CodeBuild instances", "Run CodeBuild in an ASG", "Enable CodeBuild Auto Scaling"], "question": "You would like to scale CodeBuild to run parallel builds. How can you achieve it?", "explanation": "CodeBuild runs build in parallel automatically and has a 20 concurrent build limit that you can increase. Read more:  https://docs.aws.amazon.com/codebuild/latest/userguide/limits.html"}, "correct_response": ["a"], "section": "CodeBuild", "question_plain": "You would like to scale CodeBuild to run parallel builds. How can you achieve it?", "related_lectures": []}, {"_class": "assessment", "id": 6077670, "assessment_type": "multiple-choice", "prompt": {"answers": ["Create a high resolution custom metric and push the data using cron", "Enable EC2 detailed monitoring", "Simply get it from the CloudWatch Metrics", "Open a support ticket with AWS"], "question": "Your manager would like to track CPU Utilization of your EC2 instance with a resolution of 10 seconds. What do you advise?", "explanation": "You can also alert sooner with High-Resolution Alarms, as frequently as 10-second periods. High-Resolution Alarms allow you to react and take actions faster, and support the same actions available today with standard 1-minute alarms. Read more: https://aws.amazon.com/about-aws/whats-new/2017/07/amazon-cloudwatch-introduces-high-resolution-custom-metrics-and-alarms/"}, "correct_response": ["a"], "section": "CloudWatch", "question_plain": "Your manager would like to track CPU Utilization of your EC2 instance with a resolution of 10 seconds. What do you advise?", "related_lectures": []}, {"_class": "assessment", "id": 6077672, "assessment_type": "multiple-choice", "prompt": {"answers": ["EBS volumes support in flight SSL encryption and do support encryption at rest using KMS", "EBS volumes do not support in flight SSL encryption but do support encryption at rest using KMS", "EBS volumes support in flight SSL encryption but no encryption at rest", "EBS volumes aren&#39;t secure"], "question": "Your company wants the most secure setup for your EBS volumes with minimal effort. You tell them", "explanation": "When you create an encrypted EBS volume and attach it to a supported instance type, the following types of data are encrypted:Data at rest inside the volumeAll data moving between the volume and the instanceAll snapshots created from the volumeAll volumes created from those snapshots Read more: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/EBSEncryption.html"}, "correct_response": ["a"], "section": "EBS", "question_plain": "Your company wants the most secure setup for your EBS volumes with minimal effort. You tell them", "related_lectures": []}, {"_class": "assessment", "id": 6077674, "assessment_type": "multi-select", "prompt": {"answers": ["A snapshot of an encrypted volume is always encrypted", "Restoring a volume from an encrypted snapshot must be an encrypted volume", "A snapshot of an encrypted volume can be encrypted or unencrypted", "Restoring a volume from an encrypted snapshot can be an un-encrypted volume", "EBS encryption impacts performance"], "question": "What are the correct statements about EBS encryption?", "explanation": "Amazon EBS encryption uses AWS Key Management Service (AWS KMS) customer master keys (CMKs) when creating encrypted volumes and any snapshots created from them.  Read more: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-creating-snapshot.html"}, "correct_response": ["a", "b"], "section": "EBS", "question_plain": "What are the correct statements about EBS encryption?", "related_lectures": []}, {"_class": "assessment", "id": 6077676, "assessment_type": "multiple-choice", "prompt": {"answers": ["CloudTrail", "SNS", "SQS", "CloudWatch"], "question": "Your CodePipeline now fails and it seems it has been heavily modified. Which service can you leverage to figure out the origin of the modifications?", "explanation": "CloudTrail provides event history of your AWS account activity, including actions taken through the AWS Management Console, AWS SDKs, command line tools, and other AWS services. This event history simplifies security analysis, resource change tracking, and troubleshooting. Read more: https://aws.amazon.com/cloudtrail/"}, "correct_response": ["a"], "section": "CodePipeline", "question_plain": "Your CodePipeline now fails and it seems it has been heavily modified. Which service can you leverage to figure out the origin of the modifications?", "related_lectures": []}, {"_class": "assessment", "id": 6077678, "assessment_type": "multi-select", "prompt": {"answers": ["In-place deployment", "Blue/Green", "Rolling with additional batches", "Rolling", "Immutable"], "question": "What two types of deployment are supported by CodeDeploy? (select two)", "explanation": "In-place deployment: The application on each instance in the deployment group is stopped, the latest application revision is installed, and the new version of the application is started and validated.Blue/green on an EC2/On-Premises compute platform: The instances in a deployment group (the original environment) are replaced by a different set of instances (the replacement environment)Blue/green on an AWS Lambda compute platform: Traffic is shifted from your current serverless environment to one with your updated Lambda function versions. Read more: https://docs.aws.amazon.com/codedeploy/latest/userguide/deployments.html"}, "correct_response": ["a", "b"], "section": "CodeDeploy", "question_plain": "What two types of deployment are supported by CodeDeploy? (select two)", "related_lectures": []}, {"_class": "assessment", "id": 6077680, "assessment_type": "multiple-choice", "prompt": {"answers": ["immutable", "all at once", "rolling with additional batches", "rolling", "blue/green"], "question": "You want to be able to quickly rollback any failed deployment in Elastic Beanstalk. Costing is not a problem. Which deployment mode fits your needs?", "explanation": "Immutable deployments perform an immutable update to launch a full set of new instances running the new version of the application in a separate Auto Scaling group, alongside the instances running the old version. Immutable deployments can prevent issues caused by partially completed rolling deployments. If the new instances don&#39;t pass health checks, Elastic Beanstalk terminates them, leaving the original instances untouched. Read more: https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.rolling-version-deploy.html https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/using-features.deploy-existing-version.html"}, "correct_response": ["a"], "section": "Elastic Beanstalk", "question_plain": "You want to be able to quickly rollback any failed deployment in Elastic Beanstalk. Costing is not a problem. Which deployment mode fits your needs?", "related_lectures": []}, {"_class": "assessment", "id": 6077682, "assessment_type": "multiple-choice", "prompt": {"answers": ["X-Ray", "API Gateway", "CloudWatch", "CloudTrail"], "question": "You would like to troubleshoot which service is failing in your microservice architecture when your users get the error code 501. Which service should you use?", "explanation": "AWS X-Ray helps developers analyze and debug production, distributed applications, such as those built using a microservices architecture. With X-Ray, you can understand how your application and its underlying services are performing to identify and troubleshoot the root cause of performance issues and errors. Read more: https://aws.amazon.com/xray/"}, "correct_response": ["a"], "section": "X-Ray", "question_plain": "You would like to troubleshoot which service is failing in your microservice architecture when your users get the error code 501. Which service should you use?", "related_lectures": []}, {"_class": "assessment", "id": 6077684, "assessment_type": "multiple-choice", "prompt": {"answers": ["GenerateDataKey", "Encrypt", "RetrieveCMK", "Decrypt"], "question": "You would like to perform envelope encryption. Which API call do you need to call on KMS?", "explanation": "GenerateDataKey returns a data encryption key that you can use in your application to encrypt data locally. Read more: https://docs.aws.amazon.com/kms/latest/APIReference/API_GenerateDataKey.html"}, "correct_response": ["a"], "section": "KMS", "question_plain": "You would like to perform envelope encryption. Which API call do you need to call on KMS?", "related_lectures": []}, {"_class": "assessment", "id": 6077686, "assessment_type": "multiple-choice", "prompt": {"answers": ["Kinesis Stream + Analytics", "SQS + Lambda", "EC2 + EMR", "SNS + HTTP endpoint"], "question": "You would like to perform SQL analytics on data streams. Which solution is the easiest to deploy on AWS ?", "explanation": "Amazon Kinesis Data Analytics is the easiest way to process streaming data in real time with standard SQL without having to learn new programming languages or processing frameworks. Amazon Kinesis Data Analytics enables you to query streaming data or build entire streaming applications using SQL, so that you can gain actionable insights and respond to your business and customer needs promptly. Read more: https://aws.amazon.com/kinesis/data-analytics/"}, "correct_response": ["a"], "section": "Kinesis", "question_plain": "You would like to perform SQL analytics on data streams. Which solution is the easiest to deploy on AWS ?", "related_lectures": []}, {"_class": "assessment", "id": 6077688, "assessment_type": "multi-select", "prompt": {"answers": ["The invocation was asynchronous", "The invocation failed", "The invocation was synchronous", "The invocation succeeded", "The invocation failed only once but succeeded afterwards"], "question": "You have enabled a DLQ for AWS Lambda. Which of the following will put a message into a DLQ after being processed by AWS Lambda? (select two)", "explanation": "Any Lambda function invoked asynchronously is retried twice before the event is discarded. If the retries fail and you&#39;re unsure why, use Dead Letter Queues (DLQ) to direct unprocessed events to an Amazon SQS queue. Read more: https://docs.aws.amazon.com/lambda/latest/dg/dlq.html"}, "correct_response": ["a", "b"], "section": "AWS Lambda", "question_plain": "You have enabled a DLQ for AWS Lambda. Which of the following will put a message into a DLQ after being processed by AWS Lambda? (select two)", "related_lectures": []}]};
+            let correct = new Set();
+            let incorrect = new Set();
+            let totalNumberOfQuestions = 0;
+            const quizTitle = quizData.quiz_title;
+            const quizDescription = quizData.quiz_description;
+            const questionData = quizData.questions;
+            const passPercent = quizData.pass_percent;
+            const modalTextElement = document.getElementById("modal-text");
+            const quizContainerElement = document.getElementById("quiz-container");
+
+            const dialog = document.querySelector("dialog");
+            const showButton = document.getElementById("view-explanatin");
+            const closeButton = document.getElementById("close-modal-btn");
+            const quizTitleElement = document.getElementById("quiz-title");
+            const quizDescriptionElement = document.getElementById("quiz-description");
+
+            function main() {
+                // update quiz meta data
+                document.title = quizTitle;
+                quizTitleElement.innerHTML = quizTitle;
+                quizDescriptionElement.innerHTML = quizDescription;
+
+                const passPercentElement = document.getElementById("pass-percent");
+                passPercentElement.innerHTML = passPercent + "%";
+                totalNumberOfQuestions = questionData.length;
+                // shuffle the questionData to randomize the order of the questions
+                for (let i = questionData.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [questionData[i], questionData[j]] = [questionData[j], questionData[i]];
+                }
+
+                let formattedQuestions = questionData.map(formatSingleQuestionData);
+                updateScore();
+                // display the formattedQuestions
+                formattedQuestions.forEach((question, idx) => {
+                    renderSingleQuestion(question, idx + 1);
+                });
+            }
+
+            /**
+             * Formats the question data from the given QuizData object.
+             *
+             * @param {Object} singleQuizData - The singleQuizData object containing prompt and correct_response.
+             * @return {Object} The formatted question object with the following properties:
+             *   - id: The ID of the question.
+             *   - question: The text of the question.
+             *   - answers: The array of answer options.
+             *   - correctAnswer: The text of the correct answer.
+             *   - explanation: The explanation of the correct answer.
+             */
+            function formatSingleQuestionData(singleQuizData = null) {
+                const { prompt, correct_response, id } = singleQuizData;
+                const questionText = prompt.question;
+                const answers = prompt.answers;
+                const correctAnswer = correct_response[0];
+                const correctAnswerText = answers[correctAnswer.toLowerCase().charCodeAt(0) - 97];
+                const questionObj = {
+                    id: id,
+                    question: questionText,
+                    answers: answers,
+                    correctAnswer: correctAnswerText,
+                    explanation: prompt?.explanation || "",
+                };
+                return questionObj;
+            }
+
+            /**
+             * Renders a single question with its options and submit button.
+             *
+             * @param {Object} singleQuestionData - The data of the question to render.
+             * @param {number} rootIndex - The index of the question in the quiz.
+             * @return {void} return nothing.
+             */
+
+            const renderSingleQuestion = (singleQuestionData = {}, rootIndex = 1) => {
+                const { id, explanation, answers, correctAnswer, question } = singleQuestionData;
+                // shuffle the answers to randomize the order of the answers
+                for (let i = answers.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [answers[i], answers[j]] = [answers[j], answers[i]];
+                }
+                const optionsHTML = answers
+                    .map((option, index) => {
+                        const optionId = `${id}_${index}`;
+
+                        return `
+        <div class="question-lable">
+          <input type="radio" id="${optionId}" name="${"answer"}" value="${option}" />
+          <label for="${optionId}">${option}</label>
+        </div>
+      `;
+                    })
+
+                    .join("");
+
+                const container = document.createElement("div");
+                container.innerHTML = `
+        <form data-correct-answer="${correctAnswer}" data-question-id="${id}" class="single-question-container" onsubmit="submitButtonListener(event)">
+          <div style="display: flex;justify-content: space-between;">
+            <p style="font-weight: 600">Question ${rootIndex}:</p>
+            <button type="button" onclick="renderExplanation(event)" id="${`explanation-${id}`}" data-explanation="${explanation}" class="explanation-btn">View Explanation</button>
+          </div>
+          <p style="margin-bottom: 8px;line-height: 1.5">${question}</p>
+          <div class="options-container">
+            ${optionsHTML}
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button type="submit" id="submit-button" class="button">Submit</button>
+          </div>
+        </form>
+      `;
+                quizContainerElement.appendChild(container);
+            };
+
+            /**
+             * Updates the score on the page based on the number of correct and incorrect answers.
+             *
+             * @return {void} This function does not return a value.
+             */
+            function updateScore() {
+                const currentParcentageElement = document.getElementById("current-score");
+                const correctAnswerElement = document.getElementById("correct-answers");
+                const wrongAnswerElement = document.getElementById("wrong-answers");
+                correctAnswerElement.innerHTML = correct.size;
+                wrongAnswerElement.innerHTML = incorrect.size;
+                const score = Number((correct.size / totalNumberOfQuestions) * 100).toFixed(2);
+                currentParcentageElement.innerHTML = score;
+            }
+
+            /**
+             * Handles the event when the submit button is clicked.
+             *
+             * @param {Event} e - The event object.
+             * @return {void} This function does not return anything.
+             */
+            const submitButtonListener = (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const form = e.target;
+                const selectedOption = e.target.querySelector('input[type="radio"]:checked');
+                if (!selectedOption) {
+                    alert("Please select an answer!");
+                    return;
+                }
+
+                let isCorrect = false;
+                const { answer: userAnswer } = Object.fromEntries(formData.entries());
+                const correctAnswer = e.target.dataset.correctAnswer;
+                const questionId = e.target.dataset.questionId;
+                if (userAnswer == correctAnswer) {
+                    correct.add(questionId);
+                    incorrect.delete(questionId);
+                    isCorrect = true;
+                } else {
+                    incorrect.add(e.target.dataset.questionId);
+                    correct.delete(questionId);
+                }
+                updateScore();
+
+                const resultClass = isCorrect ? "correct-answer" : "incorrect-answer";
+
+                form.querySelectorAll(".question-lable").forEach((label) => {
+                    label.classList.remove("correct-answer", "incorrect-answer");
+                });
+                selectedOption.closest(".question-lable").classList.add(resultClass);
+            };
+
+            function renderExplanation(ev) {
+                modalTextElement.innerHTML = ev.target.dataset?.explanation || "no explanation found";
+                dialog.showModal();
+                dialog.addEventListener("click", (event) => {
+                    if (event.target === dialog) {
+                        dialog.close();
+                    }
+                });
+            }
+        </script>
+    </body>
+</html>
